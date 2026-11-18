@@ -154,7 +154,8 @@ function openDemo(){
 }
 document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click',()=>{state.filter=btn.dataset.filter;render()}));
 $('#demoButton').addEventListener('click',openDemo);
-$('#unlockForm').addEventListener('submit',async e=>{e.preventDefault();const secret=$('#passphrase').value;const btn=$('#unlockForm button');btn.disabled=true;$('#unlockError').textContent='';try{await openWithPassword(secret)}catch(err){$('#unlockError').textContent=err.name==='OperationError'?'Falscher Schlüssel oder beschädigte Kalenderdatei.':err.message}finally{btn.disabled=false}});
+$('#showPassphrase').addEventListener('change',()=>{$('#passphrase').type=$('#showPassphrase').checked?'text':'password'});
+$('#unlockForm').addEventListener('submit',async e=>{e.preventDefault();const secret=$('#passphrase').value;const btn=$('#unlockForm button');btn.disabled=true;$('#unlockError').textContent='';try{await openWithPassword(secret)}catch(err){$('#unlockError').textContent=err.name==='OperationError'?'Dieser Schlüssel entschlüsselt die aktuelle Kalenderdatei nicht. Verwende exakt SYNC_PASSPHRASE aus GitHub. Falls du den Wert neu gesetzt hast, muss der GitHub-Workflow danach erneut erfolgreich laufen.':err.message}finally{btn.disabled=false}});
 $('#lockButton').addEventListener('click',signOut);
 $('#refresh').addEventListener('click',()=>refresh());
 $('#previous').addEventListener('click',()=>{let {y,m}=monthParts(state.view);state.view=month(y,m-1);renderMonth()});
