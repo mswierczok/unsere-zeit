@@ -1,0 +1,15 @@
+{
+  "id": "./",
+  "name": "Unsere Zeit – Gemeinsamer Kalender",
+  "short_name": "Unsere Zeit",
+  "description": "Gemeinsame Zeit statt Terminstress.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8f6f1",
+  "theme_color": "#387862",
+  "icons": [
+    {"src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+  ]
+}

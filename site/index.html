@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#f8f6f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Unsere Zeit – Unser Kalender</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main id="unlock" class="center-screen">
+    <section class="login-card">
+      <div class="logo large">✳</div>
+      <p class="eyebrow">EUER KALENDER</p>
+      <h1>Unsere Zeit<span class="point">.</span></h1>
+      <p class="muted">Ein Kalender. Zwei Leben. Mehr Zeit zusammen.</p>
+      <form id="unlockForm" autocomplete="off">
+        <label for="passphrase">Gemeinsamer Entschlüsselungsschlüssel</label>
+        <input id="passphrase" type="password" required autocomplete="off" placeholder="Euer privater Schlüssel" />
+        <button class="primary full" type="submit">Kalender öffnen ↗</button>
+      </form>
+      <p id="unlockError" class="error" role="alert"></p>
+      <p id="setupHint" class="small muted"></p>
+      <button id="demoButton" type="button" class="small-button demo-trigger">Demo mit Beispieldaten ansehen</button>
+      <p class="tiny muted">Die Website ist öffentlich, aber eure Termine werden verschlüsselt gespeichert. Der Schlüssel bleibt auf diesem Gerät im Arbeitsspeicher.</p>
+    </section>
+  </main>
+
+  <main id="app" class="app hidden">
+    <header class="topbar">
+      <div class="brand"><span class="logo">✳</span><span>Unsere Zeit<span class="point">.</span></span></div>
+      <div class="topbar-actions"><span id="syncAge" class="login-name">–</span><button id="lockButton" class="icon-button" title="Sperren" aria-label="Kalender sperren">⇥</button></div>
+    </header>
+    <section class="hero">
+      <p class="eyebrow">EUER GEMEINSAMER ÜBERBLICK</p>
+      <h1>Mehr Zeit <em>zusammen.</em></h1>
+      <p class="muted">Deine Termine, ihre Dienste – und die Momente dazwischen.</p>
+    </section>
+    <div id="connectionNotice" class="notice hidden" role="status"></div>
+    <section class="summary" aria-label="Kalenderstatus">
+      <div class="summary-item"><span class="summary-dot me"></span><div><span>Du</span><strong id="meStatus">Nicht verbunden</strong></div></div>
+      <span class="summary-separator"></span>
+      <div class="summary-item"><span class="summary-dot her"></span><div><span>Freundin</span><strong id="herStatus">Nicht verbunden</strong></div></div>
+      <button id="refresh" class="icon-button refresh-button" title="Aktualisierung prüfen" aria-label="Neue Daten prüfen">↻</button>
+    </section>
+    <section class="calendar panel">
+      <div class="section-head">
+        <div><p class="eyebrow">MONATSÜBERSICHT</p><h2 id="monthTitle"></h2></div>
+        <div class="nav"><button id="previous" class="icon-button" aria-label="Vorheriger Monat">‹</button><button id="today" class="small-button">Heute</button><button id="next" class="icon-button" aria-label="Nächster Monat">›</button></div>
+      </div>
+      <div class="weekdays" aria-hidden="true"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+      <div id="monthGrid" class="month-grid"></div>
+      <div class="legend"><span><i class="dot me"></i>Deine Termine</span><span><i class="dot her"></i>Ihre Dienste</span><span><i class="dot free"></i>Gemeinsame Zeit</span></div>
+    </section>
+    <div class="lower-grid">
+      <section class="panel day-panel">
+        <div class="section-head"><div><p class="eyebrow">TAGESÜBERSICHT</p><h2 id="dayTitle"></h2></div></div>
+        <div id="dayEvents" class="day-events"></div>
+        <div id="freeToday" class="free-today"></div>
+      </section>
+      <section class="panel upcoming-panel">
+        <div class="section-head"><div><p class="eyebrow">NÄCHSTE 14 TAGE</p><h2>Zeit füreinander</h2></div><span class="green-circle">♥</span></div>
+        <p class="muted small">Freie Zeitfenster von 09 bis 21 Uhr unter Berücksichtigung von Nachtdiensten.</p>
+        <div id="freeList" class="free-list"></div>
+      </section>
+    </div>
+    <section class="panel settings-lite">
+      <div class="section-head"><div><p class="eyebrow">PERSÖNLICHE EINSTELLUNGEN</p><h2>Für eure Erholung</h2></div></div>
+      <label for="recovery">Ruhezeit nach Nachtschichten</label>
+      <select id="recovery"><option value="0">Keine</option><option value="6">6 Stunden</option><option value="8" selected>8 Stunden</option><option value="10">10 Stunden</option><option value="12">12 Stunden</option></select>
+      <p class="small muted">Diese Einstellung wird nur auf diesem Gerät gespeichert. Schichtänderungen kommen aus der verschlüsselten Synchronisierung.</p>
+    </section>
+    <p class="disclaimer">„Frei“ bedeutet nur, dass während des Zeitfensters kein erfasster Termin liegt. Fahrtwege, spontane Verpflichtungen und unveröffentlichte Schichten sind nicht berücksichtigt. Veraltete Quellen werden als Warnung angezeigt.</p>
+    <footer>Mit ♡ für euren Alltag gemacht · Europe/Berlin</footer>
+  </main>
+  <div id="toast" class="toast hidden" role="status"></div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
