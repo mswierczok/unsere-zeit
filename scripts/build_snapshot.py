@@ -119,16 +119,22 @@ def main():
         OUTPUT.unlink(missing_ok=True)
         print('Noch kein SYNC_PASSPHRASE: App ohne Kalenderdaten veröffentlichen.')
         return
+    if len(password)<24:
+        print('Kalendersynchronisierung fehlgeschlagen: SYNC_PASSPHRASE_TOO_SHORT (mindestens 24 Zeichen)', file=sys.stderr)
+        raise SystemExit(1)
     try:
         data=make_snapshot()
-        payload=encode_json(data,password)
-        OUTPUT.write_text(json.dumps(payload,separators=(',',':'))+'\n',encoding='utf-8')
     except RuntimeError as error:
-        # Only a fixed diagnostic code, no private URLs, event names or raw exceptions.
         print('Kalendersynchronisierung fehlgeschlagen: ' + str(error), file=sys.stderr)
         raise SystemExit(1) from None
     except Exception:
-        print('Kalendersynchronisierung fehlgeschlagen: ENCRYPTION_OR_SNAPSHOT_FAILED',file=sys.stderr)
+        print('Kalendersynchronisierung fehlgeschlagen: SNAPSHOT_ASSEMBLY_FAILED', file=sys.stderr)
+        raise SystemExit(1) from None
+    try:
+        payload=encode_json(data,password)
+        OUTPUT.write_text(json.dumps(payload,separators=(',',':'))+'\n',encoding='utf-8')
+    except Exception:
+        print('Kalendersynchronisierung fehlgeschlagen: ENCRYPTION_FAILED', file=sys.stderr)
         raise SystemExit(1) from None
     print('Verschlüsselter Kalender erstellt. Keine privaten Termine im Build-Log.')
 
