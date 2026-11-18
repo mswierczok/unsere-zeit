@@ -10,7 +10,7 @@
   <title>Unsere Zeit – Unser Kalender</title>
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./style.css?v=20261118b" />
 </head>
 <body>
   <main id="unlock" class="center-screen">
@@ -39,13 +39,13 @@
     <section class="hero">
       <p class="eyebrow">EUER GEMEINSAMER ÜBERBLICK</p>
       <h1>Mehr Zeit <em>zusammen.</em></h1>
-      <p class="muted">Deine Termine, ihre Dienste – und die Momente dazwischen.</p>
+      <p class="muted">Marcels Termine, Vistos Dienste – und die Momente dazwischen.</p>
     </section>
     <div id="connectionNotice" class="notice hidden" role="status"></div>
     <section class="summary" aria-label="Kalenderstatus">
-      <div class="summary-item"><span class="summary-dot me"></span><div><span>Du</span><strong id="meStatus">Nicht verbunden</strong></div></div>
+      <div class="summary-item"><span class="summary-dot me"></span><div><span>Marcel</span><strong id="meStatus">Nicht verbunden</strong></div></div>
       <span class="summary-separator"></span>
-      <div class="summary-item"><span class="summary-dot her"></span><div><span>Freundin</span><strong id="herStatus">Nicht verbunden</strong></div></div>
+      <div class="summary-item"><span class="summary-dot her"></span><div><span>Visto</span><strong id="herStatus">Nicht verbunden</strong></div></div>
       <button id="refresh" class="icon-button refresh-button" title="Aktualisierung prüfen" aria-label="Neue Daten prüfen">↻</button>
     </section>
     <section class="calendar panel">
@@ -53,9 +53,10 @@
         <div><p class="eyebrow">MONATSÜBERSICHT</p><h2 id="monthTitle"></h2></div>
         <div class="nav"><button id="previous" class="icon-button" aria-label="Vorheriger Monat">‹</button><button id="today" class="small-button">Heute</button><button id="next" class="icon-button" aria-label="Nächster Monat">›</button></div>
       </div>
+      <div class="calendar-filters" role="group" aria-label="Kalenderansicht"><button type="button" data-filter="all" class="filter-button active" aria-pressed="true">Alle</button><button type="button" data-filter="me" class="filter-button" aria-pressed="false">Marcel</button><button type="button" data-filter="her" class="filter-button" aria-pressed="false">Visto</button></div>
       <div class="weekdays" aria-hidden="true"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
       <div id="monthGrid" class="month-grid"></div>
-      <div class="legend"><span><i class="dot me"></i>Deine Termine</span><span><i class="dot her"></i>Ihre Dienste</span><span><i class="dot free"></i>Gemeinsame Zeit</span></div>
+      <div class="legend"><span><i class="dot me"></i>Marcels Termine</span><span><i class="dot her"></i>Vistos Dienste</span><span><i class="dot free"></i>Gemeinsame Zeit</span></div>
     </section>
     <div class="lower-grid">
       <section class="panel day-panel">
@@ -69,6 +70,16 @@
         <div id="freeList" class="free-list"></div>
       </section>
     </div>
+    <div class="lower-grid source-calendar-grid">
+      <section class="panel source-calendar">
+        <div class="section-head"><div><p class="eyebrow">ICLOUD · ARBEIT · STUDIUM · PRIVAT</p><h2>Marcels Termine</h2></div><span class="source-icon me">M</span></div>
+        <div id="meUpcoming" class="source-upcoming"></div>
+      </section>
+      <section class="panel source-calendar">
+        <div class="section-head"><div><p class="eyebrow">MYDUTY · DIENSTPLAN</p><h2>Vistos Schichten</h2></div><span class="source-icon her">V</span></div>
+        <div id="herUpcoming" class="source-upcoming"></div>
+      </section>
+    </div>
     <section class="panel settings-lite">
       <div class="section-head"><div><p class="eyebrow">PERSÖNLICHE EINSTELLUNGEN</p><h2>Für eure Erholung</h2></div></div>
       <label for="recovery">Ruhezeit nach Nachtschichten</label>
@@ -79,6 +90,6 @@
     <footer>Mit ♡ für euren Alltag gemacht · Europe/Berlin</footer>
   </main>
   <div id="toast" class="toast hidden" role="status"></div>
-  <script src="./app.js" defer></script>
+  <script src="./app.js?v=20261118b" defer></script>
 </body>
 </html>
