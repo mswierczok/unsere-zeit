@@ -20,8 +20,9 @@
       <h1>Unsere Zeit<span class="point">.</span></h1>
       <p class="muted">Ein Kalender. Zwei Leben. Mehr Zeit zusammen.</p>
       <form id="unlockForm" autocomplete="off">
-        <label for="passphrase">Gemeinsamer Entschlüsselungsschlüssel</label>
+        <label for="passphrase">Gemeinsamer Schlüssel (GitHub: SYNC_PASSPHRASE)</label>
         <input id="passphrase" type="password" required autocomplete="off" placeholder="Euer privater Schlüssel" />
+        <label style="display:flex;align-items:center;gap:8px;margin:8px 0 14px;font-size:0.85rem"><input id="showPassphrase" type="checkbox" style="width:auto;flex:none" /> Schlüssel anzeigen</label>
         <button class="primary full" type="submit">Kalender öffnen ↗</button>
       </form>
       <p id="unlockError" class="error" role="alert"></p>
@@ -90,6 +91,6 @@
     <footer>Mit ♡ für euren Alltag gemacht · Europe/Berlin</footer>
   </main>
   <div id="toast" class="toast hidden" role="status"></div>
-  <script src="./app.js?v=20261118b" defer></script>
+  <script src="./app.js?v=20261118c" defer></script>
 </body>
 </html>
