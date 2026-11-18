@@ -136,7 +136,9 @@ def main():
     except Exception:
         print('Kalendersynchronisierung fehlgeschlagen: ENCRYPTION_FAILED', file=sys.stderr)
         raise SystemExit(1) from None
-    print('Verschlüsselter Kalender erstellt. Keine privaten Termine im Build-Log.')
+    print('iCloud-Import: ' + ('mindestens ein Termin erkannt' if data['sources']['me'].get('eventCount', 0) > 0 else '0 Termine erkannt'))
+    print('MYDUTY-Import: ' + ('mindestens ein Dienst erkannt' if data['sources']['her'].get('eventCount', 0) > 0 else '0 Dienste erkannt'))
+    print('Verschlüsselter Kalender erstellt. Keine privaten Termin-Details im Build-Log.')
 
 
 if __name__=='__main__':main()
