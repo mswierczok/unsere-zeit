@@ -52,14 +52,46 @@ def make_snapshot(now=None,myduty_sync=None,icloud_sync=None):
         raise ValueError('iCloud: Beide Zugangsdaten erforderlich.')
     if os.getenv('ICLOUD_APPLE_ID'):
         get_icloud=icloud_sync or icloud.synchronize
-        raw,_=get_icloud(now=current)
-        items=parse_ics(raw,start,end,'me','iCloud')
+        try:
+            raw,_=get_icloud(now=current)
+        except icloud.ICloudError as exc:
+            message = str(exc)
+            if 'Kalender wurde nicht gefunden' in message:
+                raise RuntimeError('ICLOUD_CALENDAR_NAMES_NOT_FOUND') from None
+            if 'Keine iCloud-Kalender' in message:
+                raise RuntimeError('ICLOUD_NO_CALENDARS') from None
+            raise RuntimeError('ICLOUD_CONNECTION_FAILED') from None
+        except Exception:
+            raise RuntimeError('ICLOUD_UNEXPECTED_FAILURE') from None
+        try:
+            items=parse_ics(raw,start,end,'me','iCloud')
+        except Exception:
+            raise RuntimeError('ICLOUD_ICS_PARSE_FAILED') from None
         all_events.extend(items)
         sources['me']={'configured':True,'name':'iCloud','eventCount':len(items)}
     if os.getenv('MYDUTY_SHARE_URL'):
         get_myduty=myduty_sync or myduty.synchronize
-        raw,_=get_myduty(os.environ['MYDUTY_SHARE_URL'],now=current.date())
-        items=parse_ics(raw,start,end,'her','MYDUTY')
+        try:
+            raw,_=get_myduty(os.environ['MYDUTY_SHARE_URL'],now=current.date())
+        except myduty.ConnectorError as exc:
+            message = str(exc)
+            if 'abgelaufen' in message:
+                raise RuntimeError('MYDUTY_LINK_EXPIRED_OR_FORBIDDEN') from None
+            if 'weitergeleitet' in message:
+                raise RuntimeError('MYDUTY_REDIRECT_NOT_ALLOWED') from None
+            if 'Datenformat' in message or 'Schichtformat' in message or 'Schichtliste' in message:
+                raise RuntimeError('MYDUTY_FORMAT_CHANGED') from None
+            if 'Dienstplan' in message:
+                raise RuntimeError('MYDUTY_MONTHLY_API_FAILED') from None
+            if 'erreichbar' in message or 'Verbindung' in message:
+                raise RuntimeError('MYDUTY_NETWORK_FAILED') from None
+            raise RuntimeError('MYDUTY_SHARE_FETCH_FAILED') from None
+        except Exception:
+            raise RuntimeError('MYDUTY_UNEXPECTED_FAILURE') from None
+        try:
+            items=parse_ics(raw,start,end,'her','MYDUTY')
+        except Exception:
+            raise RuntimeError('MYDUTY_ICS_PARSE_FAILED') from None
         all_events.extend(items)
         sources['her']={'configured':True,'name':'MYDUTY','eventCount':len(items)}
     if len(all_events)>12000:
@@ -91,9 +123,12 @@ def main():
         data=make_snapshot()
         payload=encode_json(data,password)
         OUTPUT.write_text(json.dumps(payload,separators=(',',':'))+'\n',encoding='utf-8')
-    except Exception as error:
-        # Do not expose network exceptions, private links or event names in Actions logs.
-        print('Kalendersynchronisierung fehlgeschlagen. Prüfe Geheimnisse und MYDUTY-Link-Ablauf.',file=sys.stderr)
+    except RuntimeError as error:
+        # Only a fixed diagnostic code, no private URLs, event names or raw exceptions.
+        print('Kalendersynchronisierung fehlgeschlagen: ' + str(error), file=sys.stderr)
+        raise SystemExit(1) from None
+    except Exception:
+        print('Kalendersynchronisierung fehlgeschlagen: ENCRYPTION_OR_SNAPSHOT_FAILED',file=sys.stderr)
         raise SystemExit(1) from None
     print('Verschlüsselter Kalender erstellt. Keine privaten Termine im Build-Log.')
 
