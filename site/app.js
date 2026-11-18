@@ -18,7 +18,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;',
 const local = (s,t='09:00')=>{const [y,m,d]=s.split('-').map(Number),[h,min]=t.split(':').map(Number),desired=Date.UTC(y,m-1,d,h,min);let actual=new Date(desired);for(let i=0;i<3;i++){const p=parts(actual),clock=Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute);actual=new Date(actual.getTime()+desired-clock)}return actual};
 const todayKey = ()=>keyOf(new Date());
 const tm=monthParts(fromKey(todayKey()));
-const state={view:month(tm.y,tm.m),selected:todayKey(),events:[],sources:{me:{configured:false},her:{configured:false}},updatedAt:null,recovery:8};
+const state={view:month(tm.y,tm.m),selected:todayKey(),events:[],sources:{me:{configured:false},her:{configured:false}},updatedAt:null,recovery:8,filter:'all',periodStart:null,periodEnd:null};
 let passphrase = null;
 let demoMode = false;
 let snapshotVersion = null;
@@ -48,6 +48,7 @@ function setData(data,payload){
  state.events=data.events;
  state.sources=data.sources;
  state.updatedAt=data.updatedAt;
+ state.periodStart=data.periodStart||null;state.periodEnd=data.periodEnd||null;
  snapshotVersion=payload.ciphertext;
  render();
 }
@@ -70,19 +71,21 @@ async function refresh({quiet=false}={}){
    if(!quiet)notify('Neue Kalenderdaten geladen.');
  }catch(e){if(!quiet)notify('Aktualisierung nicht möglich: '+e.message);updateStatus()}
 }
-function signOut(){demoMode=false;passphrase=null;snapshotVersion=null;state.events=[];$('#app').classList.add('hidden');$('#unlock').classList.remove('hidden');$('#unlockError').textContent='';$('#passphrase').value=''}
+function signOut(){demoMode=false;passphrase=null;snapshotVersion=null;state.events=[];state.periodStart=null;state.periodEnd=null;$('#app').classList.add('hidden');$('#unlock').classList.remove('hidden');$('#unlockError').textContent='';$('#passphrase').value=''}
 const fullCoverage=()=>Boolean(state.sources.me?.configured&&state.sources.her?.configured);
 const dataAge=()=>state.updatedAt?(Date.now()-new Date(state.updatedAt).getTime())/3600000:Infinity;
 function trustworthy(){return !demoMode && fullCoverage() && dataAge()>=-0.2 && dataAge()<4}
 function updateStatus(){
  if(demoMode){$('#meStatus').textContent='Beispieldaten';$('#herStatus').textContent='Beispieldaten';$('#syncAge').textContent='Demo';const banner=$('#connectionNotice');banner.textContent='DEMO: Alle angezeigten Termine sind erfunden. Es sind keine Kalenderquellen verbunden.';banner.classList.remove('hidden');return}
  const age=dataAge();
- $('#meStatus').textContent=state.sources.me?.configured?'iCloud verbunden':'Noch nicht verbunden';
- $('#herStatus').textContent=state.sources.her?.configured?'MYDUTY verbunden':'Noch nicht verbunden';
+ const sourceCount=owner=>Number.isInteger(state.sources[owner]?.eventCount)?state.sources[owner].eventCount:state.events.filter(e=>e.owner===owner).length;
+ $('#meStatus').textContent=state.sources.me?.configured?'iCloud · '+sourceCount('me')+' Termine':'Noch nicht verbunden';
+ $('#herStatus').textContent=state.sources.her?.configured?'MYDUTY · '+sourceCount('her')+' Schichten':'Noch nicht verbunden';
  $('#syncAge').textContent=Number.isFinite(age)?'vor '+(age<1?Math.max(1,Math.round(age*60))+' Min.':Math.round(age)+' Std.'):'Nicht synchronisiert';
  const note=$('#connectionNotice');
  const problems=[];
  if(!fullCoverage())problems.push('Nicht beide Kalenderquellen sind eingerichtet. Freie Zeitfenster sind unverbindlich.');
+ if(state.sources.me?.configured && state.events.every(e=>e.owner!=='me'))problems.push('Marcel: iCloud wurde erfolgreich abgefragt, hat aber im synchronisierten Zeitraum keine Termine geliefert. Die Kalender Arbeit, Studium und Privat können leer sein.');
  if(age>=4)problems.push('Die letzte erfolgreiche Aktualisierung ist älter als vier Stunden. Eventuell ist ein MYDUTY-Link abgelaufen.');
  if(age<-.2)problems.push('Das Datum der Synchronisierung liegt in der Zukunft; die Systemzeit prüfen.');
  note.textContent=problems.join(' '); note.classList.toggle('hidden',problems.length===0);
@@ -103,12 +106,16 @@ function renderMonth(){
  $('#monthTitle').textContent=dfMonth.format(state.view);
  const grid=$('#monthGrid');grid.replaceChildren();
  for(let i=0;i<42;i++){
-  const d=plusDays(initial,i),k=keyOf(d),events=dayEvents(k),owners=['me','her'].filter(owner=>events.some(e=>e.owner===owner&&!e.isOff));
-  const isFree=trustworthy()&&!events.some(e=>!e.isOff)&&slots(k).some(t=>t.minutes>=660);
+  const d=plusDays(initial,i),k=keyOf(d),events=dayEvents(k);
+  const visible=events.filter(e=>state.filter==='all'||e.owner===state.filter);
+  const owners=['me','her'].filter(owner=>visible.some(e=>e.owner===owner&&!e.isOff));
+  const isWithinRange=(!state.periodStart||k>=state.periodStart.slice(0,10))&&(!state.periodEnd||k<state.periodEnd.slice(0,10));
+  const isFree=trustworthy()&&isWithinRange&&!events.some(e=>!e.isOff)&&slots(k).some(t=>t.minutes>=660);
+  const preview=visible.filter(e=>!e.isOff).slice(0,2).map(e=>`<span class="day-preview ${e.owner}" title="${esc(e.title)}">${esc(e.title)}</span>`).join('');
   const el=document.createElement('button');el.type='button';
   el.className='day'+(d.getUTCMonth()!==m?' outside':'')+(k===todayKey()?' today':'')+(k===state.selected?' selected':'');
-  el.setAttribute('aria-label',dfDate.format(d));
-  el.innerHTML=`<span class="day-num">${d.getUTCDate()}</span><div class="marks">${owners.map(o=>`<span class="pill-mini ${o}"></span>`).join('')}</div>${isFree&&d.getUTCMonth()===m?'<span class="free-indicator">♥ frei</span>':''}`;
+  el.setAttribute('aria-label',dfDate.format(d)+(visible.length?' · '+visible.length+' Termine':''));
+  el.innerHTML=`<span class="day-num">${d.getUTCDate()}</span><div class="marks">${owners.map(o=>`<span class="pill-mini ${o}"></span>`).join('')}</div><div class="day-previews">${preview}</div>${isFree&&d.getUTCMonth()===m?'<span class="free-indicator">♥ frei</span>':''}`;
   el.addEventListener('click',()=>{state.selected=k;if(d.getUTCMonth()!==m)state.view=month(d.getUTCFullYear(),d.getUTCMonth());renderMonth();renderDay()});
   grid.append(el);
  }
@@ -116,8 +123,8 @@ function renderMonth(){
 function formattedEvent(e){if(e.allDay)return 'Ganztägig';return `${dfTime.format(new Date(e.start))}–${dfTime.format(new Date(e.end))}`}
 function renderDay(){
  $('#dayTitle').textContent=dfDate.format(fromKey(state.selected));
- const e=dayEvents(state.selected);
- $('#dayEvents').innerHTML=e.length?e.map(x=>`<div class="event-line"><span class="event-track ${x.owner}"></span><div class="event-content"><strong>${esc(x.title)}</strong><div class="meta">${x.owner==='me'?'Du':'Freundin'} · ${formattedEvent(x)} · ${esc(x.source||'Kalender')}${x.isOff?' · Frei':''}</div></div></div>`).join(''):'<p class="empty">Hier sind keine Termine erfasst.</p>';
+ const e=dayEvents(state.selected).filter(x=>state.filter==='all'||x.owner===state.filter);
+ $('#dayEvents').innerHTML=e.length?e.map(x=>`<div class="event-line"><span class="event-track ${x.owner}"></span><div class="event-content"><strong>${esc(x.title)}</strong><div class="meta">${x.owner==='me'?'Marcel':'Visto'} · ${formattedEvent(x)} · ${esc(x.source||'Kalender')}${x.isOff?' · Frei':''}</div></div></div>`).join(''):'<p class="empty">Hier sind keine Termine erfasst.</p>';
  const available=slots(state.selected).filter(x=>x.minutes>=60);
  $('#freeToday').innerHTML=`<strong>♥ ${trustworthy()?'Gemeinsame Zeitfenster':'Mögliche Zeitfenster'}</strong>${available.length?available.map(x=>dfTime.format(x.start)+'–'+dfTime.format(x.end)).join(' · '):'Keine mindestens einstündige freie Zeit zwischen 9 und 21 Uhr.'}${trustworthy()?'':'<div class="small">Noch nicht vollständig bestätigt.</div>'}`;
 }
@@ -125,7 +132,18 @@ function renderFreeList(){
  let data=[];for(let i=0;i<14;i++){let day=plusDays(fromKey(todayKey()),i),s=slots(keyOf(day)).filter(x=>x.minutes>=120);if(s.length)data.push({date:day,slot:s.sort((a,b)=>b.minutes-a.minutes)[0]})}
  $('#freeList').innerHTML=data.length?data.slice(0,8).map(x=>`<div class="free-row"><div class="free-date"><span>${esc(dfWeek.format(x.date))}</span><strong>${x.date.getUTCDate()}</strong></div><div class="free-info"><strong>${Math.floor(x.slot.minutes/60)} Std. ${Math.round(x.slot.minutes%60)} Min. ${trustworthy()?'gemeinsam':'möglich'}</strong><p>${dfTime.format(x.slot.start)}–${dfTime.format(x.slot.end)}${trustworthy()?'':' · unter Vorbehalt'}</p></div></div>`).join(''):'<p class="empty">Keine freien Zeitfenster erkannt.</p>';
 }
-function render(){updateStatus();renderMonth();renderDay();renderFreeList()}
+function renderSources(){
+ const today=Date.now();
+ for(const [owner,target,sourceName] of [['me','#meUpcoming','iCloud'],['her','#herUpcoming','MYDUTY']]){
+  const list=$(target);
+  if(!state.sources[owner]?.configured && !demoMode){list.innerHTML='<p class="empty">'+sourceName+' ist noch nicht verbunden.</p>';continue}
+  const events=state.events.filter(e=>e.owner===owner&&!e.isOff&&Number.isFinite(Date.parse(e.end))&&Date.parse(e.end)>=today).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
+  if(events.length===0){list.innerHTML='<p class="empty">Keine kommenden '+(owner==='me'?'iCloud-Termine für Marcel':'MYDUTY-Dienste für Visto')+' in den synchronisierten Kalenderdaten.</p>';continue}
+  list.innerHTML=events.slice(0,5).map(e=>`<div class="source-event"><span class="source-event-date">${esc(dfDate.format(new Date(e.start)))}</span><strong>${esc(e.title)}</strong><span class="source-event-time">${esc(formattedEvent(e))}</span></div>`).join('')+(events.length>5?`<p class="small muted">+ ${events.length-5} weitere Termine im synchronisierten Zeitraum</p>`:'');
+ }
+}
+function renderFilters(){document.querySelectorAll('[data-filter]').forEach(btn=>{let yes=btn.dataset.filter===state.filter;btn.classList.toggle('active',yes);btn.setAttribute('aria-pressed',String(yes))})}
+function render(){updateStatus();renderFilters();renderMonth();renderDay();renderFreeList();renderSources()}
 function openDemo(){
  demoMode=true; passphrase=null; snapshotVersion=null;
  const today=todayKey(), tomorrow=keyOf(plusDays(fromKey(today),1)), after=keyOf(plusDays(fromKey(today),2));
@@ -134,6 +152,7 @@ function openDemo(){
  state.sources={me:{configured:false},her:{configured:false}};state.updatedAt=null;
  $('#unlock').classList.add('hidden');$('#app').classList.remove('hidden');render();
 }
+document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click',()=>{state.filter=btn.dataset.filter;render()}));
 $('#demoButton').addEventListener('click',openDemo);
 $('#unlockForm').addEventListener('submit',async e=>{e.preventDefault();const secret=$('#passphrase').value;const btn=$('#unlockForm button');btn.disabled=true;$('#unlockError').textContent='';try{await openWithPassword(secret)}catch(err){$('#unlockError').textContent=err.name==='OperationError'?'Falscher Schlüssel oder beschädigte Kalenderdatei.':err.message}finally{btn.disabled=false}});
 $('#lockButton').addEventListener('click',signOut);
