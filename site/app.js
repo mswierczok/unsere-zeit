@@ -23,6 +23,29 @@ let passphrase = null;
 let demoMode = false;
 let snapshotVersion = null;
 let notificationTimer;
+let rememberedHere = false;
+function rememberUI(enabled) {
+  rememberedHere = Boolean(enabled);
+  $('#rememberLogin').checked = rememberedHere;
+  $('#rememberSetting').checked = rememberedHere;
+}
+async function setRememberOption(enabled, quiet=false) {
+  try {
+    if (enabled) {
+      if (!passphrase || demoMode) throw new Error('Erst regulär anmelden');
+      await window.UnsereZeitRemember.save(passphrase);
+    } else {
+      await window.UnsereZeitRemember.clear();
+    }
+    rememberUI(enabled);
+    if (!quiet) notify(enabled ? 'Du bleibst auf diesem Gerät angemeldet.' : 'Gespeicherte Anmeldung entfernt.');
+    return true;
+  } catch (error) {
+    rememberUI(false);
+    if (!quiet) notify('Der Gerätespeicher ist nicht verfügbar. Die Anmeldung gilt nur bis zum Schließen.');
+    return false;
+  }
+}
 function notify(message){const n=$('#toast');n.textContent=message;n.classList.remove('hidden');clearTimeout(notificationTimer);notificationTimer=setTimeout(()=>n.classList.add('hidden'),3800)}
 function b64(s){let bin=atob(s);return Uint8Array.from(bin,c=>c.charCodeAt(0))}
 async function decrypt(payload, secret){
@@ -59,6 +82,7 @@ async function openWithPassword(secret){
  passphrase=secret;
  setData(data,payload);
  $('#unlock').classList.add('hidden');$('#app').classList.remove('hidden');$('#passphrase').value='';
+ $('#rememberSetting').disabled=false;
 }
 async function refresh({quiet=false}={}){
  if(demoMode){if(!quiet)notify('Demo: nur Beispieldaten, keine echte Synchronisierung.');return}
@@ -71,7 +95,16 @@ async function refresh({quiet=false}={}){
    if(!quiet)notify('Neue Kalenderdaten geladen.');
  }catch(e){if(!quiet)notify('Aktualisierung nicht möglich: '+e.message);updateStatus()}
 }
-function signOut(){demoMode=false;passphrase=null;snapshotVersion=null;state.events=[];state.periodStart=null;state.periodEnd=null;$('#app').classList.add('hidden');$('#unlock').classList.remove('hidden');$('#unlockError').textContent='';$('#passphrase').value=''}
+async function signOut(){
+ let erased=true;
+ try { await window.UnsereZeitRemember.clear(); }
+ catch { erased=false; }
+ rememberUI(false);
+ demoMode=false;passphrase=null;snapshotVersion=null;state.events=[];state.periodStart=null;state.periodEnd=null;
+ $('#app').classList.add('hidden');$('#unlock').classList.remove('hidden');
+ $('#unlockError').textContent='';$('#passphrase').value='';
+ if(!erased) $('#unlockError').textContent='Abgemeldet. Lokale Speicherung konnte nicht gelöscht werden; gegebenenfalls Website-Daten in Safari entfernen.';
+}
 const fullCoverage=()=>Boolean(state.sources.me?.configured&&state.sources.her?.configured);
 const dataAge=()=>state.updatedAt?(Date.now()-new Date(state.updatedAt).getTime())/3600000:Infinity;
 function trustworthy(){return !demoMode && fullCoverage() && dataAge()>=-0.2 && dataAge()<4}
@@ -150,13 +183,33 @@ function openDemo(){
  const example=(owner,title,date,start,end,overnight=false)=>({owner,title,start:local(date,start).toISOString(),end:local(overnight?keyOf(plusDays(fromKey(date),1)):date,end).toISOString(),allDay:false,source:owner==='me'?'Beispiel iCloud':'Beispiel MYDUTY',isOff:false,isNight:overnight});
  state.events=[example('me','Uni · Seminar',today,'09:00','14:00'),example('her','Frühdienst',today,'06:00','14:00'),example('me','Arbeit',tomorrow,'08:30','17:00'),example('her','Nachtdienst',tomorrow,'21:00','07:00',true),example('me','Privater Termin',after,'15:00','16:00')];
  state.sources={me:{configured:false},her:{configured:false}};state.updatedAt=null;
- $('#unlock').classList.add('hidden');$('#app').classList.remove('hidden');render();
+ $('#unlock').classList.add('hidden');$('#app').classList.remove('hidden');$('#rememberSetting').disabled=true;rememberUI(false);render();
 }
 document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click',()=>{state.filter=btn.dataset.filter;render()}));
 $('#demoButton').addEventListener('click',openDemo);
 $('#showPassphrase').addEventListener('change',()=>{$('#passphrase').type=$('#showPassphrase').checked?'text':'password'});
-$('#unlockForm').addEventListener('submit',async e=>{e.preventDefault();const secret=$('#passphrase').value;const btn=$('#unlockForm button');btn.disabled=true;$('#unlockError').textContent='';try{await openWithPassword(secret)}catch(err){$('#unlockError').textContent=err.name==='OperationError'?'Dieser Schlüssel entschlüsselt die aktuelle Kalenderdatei nicht. Verwende exakt SYNC_PASSPHRASE aus GitHub. Falls du den Wert neu gesetzt hast, muss der GitHub-Workflow danach erneut erfolgreich laufen.':err.message}finally{btn.disabled=false}});
+$('#unlockForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const secret=$('#passphrase').value;
+ const wantsRemember=$('#rememberLogin').checked;
+ const btn=$('#unlockForm button');
+ btn.disabled=true;$('#unlockError').textContent='';
+ try {
+   await openWithPassword(secret);
+   const saved=await setRememberOption(wantsRemember,true);
+   if(wantsRemember && !saved)notify('Automatisches Anmelden wird von diesem Browser nicht unterstützt.');
+ } catch(err) {
+   $('#unlockError').textContent=err.name==='OperationError'
+     ? 'Dieser Schlüssel entschlüsselt die Kalenderdatei nicht. Prüfe den aktuellen GitHub-Schlüssel.'
+     : err.message;
+ } finally {btn.disabled=false}
+});
 $('#lockButton').addEventListener('click',signOut);
+$('#rememberSetting').addEventListener('change',async()=>{
+ const enabled=$('#rememberSetting').checked;
+ if(demoMode){rememberUI(false);notify('Nur mit dem echten Kalender möglich.');return}
+ await setRememberOption(enabled);
+});
 $('#refresh').addEventListener('click',()=>refresh());
 $('#previous').addEventListener('click',()=>{let {y,m}=monthParts(state.view);state.view=month(y,m-1);renderMonth()});
 $('#next').addEventListener('click',()=>{let {y,m}=monthParts(state.view);state.view=month(y,m+1);renderMonth()});
@@ -167,3 +220,30 @@ window.addEventListener('focus',()=>refresh({quiet:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh({quiet:true})});
 setInterval(()=>{if(!document.hidden)refresh({quiet:true})},600000);
 (async()=>{try{let r=await fetch('./snapshot.enc.json',{cache:'no-store'});if(r.status===404)$('#setupHint').textContent='Noch keine Daten vorhanden: Bitte die GitHub-Secrets einrichten. Die App ist bereits veröffentlichbar.';else if(!r.ok)$('#setupHint').textContent='Daten sind derzeit nicht erreichbar.'}catch{$('#setupHint').textContent='Zum Laden der Kalenderdaten wird eine Internetverbindung benötigt.'}})();
+(async function tryAutoLogin(){
+ const button=$('#unlockForm button');
+ button.disabled=true;
+ try {
+   const secret=await window.UnsereZeitRemember.load();
+   if(!secret)return;
+   $('#setupHint').textContent='Gespeicherte Anmeldung wird geöffnet …';
+   try {
+     await openWithPassword(secret);
+     rememberUI(true);
+   } catch(error) {
+     if(error.name==='OperationError'){
+       // GitHub-SYNC_PASSPHRASE changed; don't keep retrying invalid device credentials.
+       try{await window.UnsereZeitRemember.clear()}catch{}
+       rememberUI(false);
+       $('#unlockError').textContent='Deine gespeicherte Anmeldung ist nicht mehr gültig. Bitte mit dem aktuellen Schlüssel anmelden.';
+     } else {
+       $('#unlockError').textContent='Automatische Anmeldung derzeit nicht möglich. Bitte erneut versuchen.';
+     }
+   }
+ } catch {
+   $('#unlockError').textContent='Die gespeicherte Anmeldung konnte nicht gelesen werden. Bitte manuell anmelden.';
+ } finally {
+   $('#setupHint').textContent='';
+   button.disabled=false;
+ }
+})();
