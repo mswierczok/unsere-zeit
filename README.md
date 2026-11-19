@@ -76,3 +76,5 @@ Der Build erzeugt die temporäre Datei `site/snapshot.enc.json` **nur im Actions
 ## Entwicklung / Tests
 
 Python 3.12+, `pip install -r requirements.txt`, dann `python -m unittest discover -s tests -v`. JavaScript-Syntax mit `node --check site/app.js` prüfbar. Eine echte Live-Synchronisierung kann nur mit den jeweiligen autorisierten Zugangsdaten in Actions getestet werden.
+
+<!-- Workflow-Abgleich manuell ausgelöst: 2026-11-19 11:03 Europe/Berlin. -->
