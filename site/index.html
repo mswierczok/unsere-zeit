@@ -10,7 +10,7 @@
   <title>Unsere Zeit – Unser Kalender</title>
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-  <link rel="stylesheet" href="./style.css?v=20261118b" />
+  <link rel="stylesheet" href="./style.css?v=20261119-login1" />
 </head>
 <body>
   <main id="unlock" class="center-screen">
@@ -23,19 +23,23 @@
         <label for="passphrase">Gemeinsamer Schlüssel (GitHub: SYNC_PASSPHRASE)</label>
         <input id="passphrase" type="password" required autocomplete="off" placeholder="Euer privater Schlüssel" />
         <label style="display:flex;align-items:center;gap:8px;margin:8px 0 14px;font-size:0.85rem"><input id="showPassphrase" type="checkbox" style="width:auto;flex:none" /> Schlüssel anzeigen</label>
+        <label class="remember-option" for="rememberLogin">
+          <input id="rememberLogin" type="checkbox" />
+          <span>Auf diesem Gerät angemeldet bleiben</span>
+        </label>
         <button class="primary full" type="submit">Kalender öffnen ↗</button>
       </form>
       <p id="unlockError" class="error" role="alert"></p>
       <p id="setupHint" class="small muted"></p>
       <button id="demoButton" type="button" class="small-button demo-trigger">Demo mit Beispieldaten ansehen</button>
-      <p class="tiny muted">Die Website ist öffentlich, aber eure Termine werden verschlüsselt gespeichert. Der Schlüssel bleibt auf diesem Gerät im Arbeitsspeicher.</p>
+      <p class="tiny muted">Eure Termine bleiben verschlüsselt. Mit „angemeldet bleiben“ wird der Zugang lokal auf diesem Gerät gespeichert. Wer dein entsperrtes iPhone nutzt, kann dann den Kalender öffnen. Über „Abmelden“ wird die gespeicherte Anmeldung gelöscht.</p>
     </section>
   </main>
 
   <main id="app" class="app hidden">
     <header class="topbar">
       <div class="brand"><span class="logo">✳</span><span>Unsere Zeit<span class="point">.</span></span></div>
-      <div class="topbar-actions"><span id="syncAge" class="login-name">–</span><button id="lockButton" class="icon-button" title="Sperren" aria-label="Kalender sperren">⇥</button></div>
+      <div class="topbar-actions"><span id="syncAge" class="login-name">–</span><button id="lockButton" class="icon-button" title="Abmelden" aria-label="Abmelden und gespeicherte Anmeldung löschen">⇥</button></div>
     </header>
     <section class="hero">
       <p class="eyebrow">EUER GEMEINSAMER ÜBERBLICK</p>
@@ -86,11 +90,19 @@
       <label for="recovery">Ruhezeit nach Nachtschichten</label>
       <select id="recovery"><option value="0">Keine</option><option value="6">6 Stunden</option><option value="8" selected>8 Stunden</option><option value="10">10 Stunden</option><option value="12">12 Stunden</option></select>
       <p class="small muted">Diese Einstellung wird nur auf diesem Gerät gespeichert. Schichtänderungen kommen aus der verschlüsselten Synchronisierung.</p>
+      <div class="device-login-settings">
+        <label class="remember-option" for="rememberSetting">
+          <input id="rememberSetting" type="checkbox" />
+          <span>Auf diesem Gerät angemeldet bleiben</span>
+        </label>
+        <p class="small muted">Du kannst die Anmeldung hier jederzeit aktivieren oder ausschalten. „Abmelden“ oben rechts entfernt sie von diesem Gerät.</p>
+      </div>
     </section>
     <p class="disclaimer">„Frei“ bedeutet nur, dass während des Zeitfensters kein erfasster Termin liegt. Fahrtwege, spontane Verpflichtungen und unveröffentlichte Schichten sind nicht berücksichtigt. Veraltete Quellen werden als Warnung angezeigt.</p>
     <footer>Mit ♡ für euren Alltag gemacht · Europe/Berlin</footer>
   </main>
   <div id="toast" class="toast hidden" role="status"></div>
-  <script src="./app.js?v=20261119-23h" defer></script>
+  <script src="./remember.js?v=20261119-login1" defer></script>
+  <script src="./app.js?v=20261119-login1" defer></script>
 </body>
 </html>
