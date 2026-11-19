@@ -22,6 +22,7 @@ sys.path.insert(0,str(ROOT))
 from calendar_ics import parse_ics
 import myduty
 import icloud
+import iu_import
 
 TZ = ZoneInfo('Europe/Berlin')
 OUTPUT = ROOT/'site'/'snapshot.enc.json'
@@ -68,7 +69,26 @@ def make_snapshot(now=None,myduty_sync=None,icloud_sync=None):
         except Exception:
             raise RuntimeError('ICLOUD_ICS_PARSE_FAILED') from None
         all_events.extend(items)
-        sources['me']={'configured':True,'name':'iCloud','eventCount':len(items)}
+        sources['me']={'configured':True,'name':'iCloud','eventCount':len(items),'icloudCount':len(items)}
+    # IU export stored as ciphertext in the public repository. The import key
+    # must be supplied separately through GitHub Actions Secrets.
+    if os.getenv('IU_ICS_IMPORT_KEY'):
+        try:
+            raw_iu=iu_import.load_iu_ics(os.environ['IU_ICS_IMPORT_KEY'], ROOT/'data'/'iu-calendar.enc.json')
+        except iu_import.IUImportError:
+            raise RuntimeError('IU_IMPORT_DECRYPT_FAILED') from None
+        try:
+            iu_events=parse_ics(raw_iu,start,end,'me','IU Stundenplan')
+        except Exception:
+            raise RuntimeError('IU_IMPORT_PARSE_FAILED') from None
+        all_events.extend(iu_events)
+        had_icloud=bool(sources['me']['configured'])
+        sources['me'].update({
+            'configured':True,
+            'name':'iCloud + IU' if had_icloud else 'IU Stundenplan',
+            'iuCount':len(iu_events),
+            'eventCount':sources['me'].get('eventCount',0)+len(iu_events),
+        })
     if os.getenv('MYDUTY_SHARE_URL'):
         get_myduty=myduty_sync or myduty.synchronize
         try:
@@ -97,7 +117,13 @@ def make_snapshot(now=None,myduty_sync=None,icloud_sync=None):
     if len(all_events)>12000:
         raise ValueError('Zu viele Kalendereinträge für diesen Zeitraum.')
     clean=[]
+    seen=set()
     for event in all_events:
+        # The same IU event can later arrive through iCloud too; keep the first.
+        marker=(event['owner'],event['start'],event['end'],str(event['title']).strip().casefold())
+        if marker in seen:
+            continue
+        seen.add(marker)
         clean.append({
             'owner':event['owner'],
             'title':str(event['title'])[:250],
@@ -109,6 +135,9 @@ def make_snapshot(now=None,myduty_sync=None,icloud_sync=None):
             'isNight':bool(event.get('isNight')),
         })
     clean.sort(key=lambda e:(e['start'],e['owner'],e['title']))
+    for owner in ('me','her'):
+        if sources[owner].get('configured'):
+            sources[owner]['eventCount']=sum(1 for event in clean if event['owner']==owner)
     return {'format':1,'updatedAt':current.isoformat(),'periodStart':start.isoformat(),'periodEnd':end.isoformat(),'sources':sources,'events':clean}
 
 
@@ -137,6 +166,7 @@ def main():
         print('Kalendersynchronisierung fehlgeschlagen: ENCRYPTION_FAILED', file=sys.stderr)
         raise SystemExit(1) from None
     print('iCloud-Import: ' + ('mindestens ein Termin erkannt' if data['sources']['me'].get('eventCount', 0) > 0 else '0 Termine erkannt'))
+    print('IU-Import: ' + ('mindestens ein Termin erkannt' if data['sources']['me'].get('iuCount', 0) > 0 else '0 Termine erkannt (noch kein IU-Schlüssel oder keine Termine)'))
     print('MYDUTY-Import: ' + ('mindestens ein Dienst erkannt' if data['sources']['her'].get('eventCount', 0) > 0 else '0 Dienste erkannt'))
     print('Verschlüsselter Kalender erstellt. Keine privaten Termin-Details im Build-Log.')
 

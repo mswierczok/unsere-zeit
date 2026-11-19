@@ -78,3 +78,17 @@ Der Build erzeugt die temporäre Datei `site/snapshot.enc.json` **nur im Actions
 Python 3.12+, `pip install -r requirements.txt`, dann `python -m unittest discover -s tests -v`. JavaScript-Syntax mit `node --check site/app.js` prüfbar. Eine echte Live-Synchronisierung kann nur mit den jeweiligen autorisierten Zugangsdaten in Actions getestet werden.
 
 <!-- Workflow-Abgleich manuell ausgelöst: 2026-11-19 11:03 Europe/Berlin. -->
+
+
+## IU-Stundenplan aus hochgeladener ICS-Datei (November 2026)
+
+Die 43 Veranstaltungs-Termine des exportierten IU-Kalenders liegen **ausschließlich verschlüsselt** in `data/iu-calendar.enc.json` im öffentlichen Repository. Die unverschlüsselte `.ics`-Datei wurde **nicht** hochgeladen. iCloud und MYDUTY funktionieren unabhängig davon weiterhin.
+
+Für den Import musst du einmalig das zusätzliche GitHub-Actions-Secret **`IU_ICS_IMPORT_KEY`** eintragen. Verwende exakt die 64 Hex-Zeichen aus der separat bereitgestellten Datei `iu-import-github-secret.txt` (ohne Leerzeichen oder Zeilenumbruch). Diesen Schlüssel **niemals** in den öffentlichen Code oder in eine GitHub-Issue kopieren.
+
+1. Repository → Settings → Secrets and variables → Actions → New repository secret → Name: `IU_ICS_IMPORT_KEY`.
+2. Wert aus der heruntergeladenen Schlüsseldatei einfügen und speichern.
+3. Unter Actions den Workflow **Unsere Zeit – Kalender aktualisieren und Pages veröffentlichen** über **Run workflow** erneut starten.
+4. Nach erfolgreicher Veröffentlichung in der App mit dem **unveränderten** `SYNC_PASSPHRASE` anmelden und unter Marcel die Termine prüfen.
+
+Der IU-Import wird mit den iCloud-Ereignissen zusammengeführt; gleich betitelte Veranstaltungen mit identischer Start- und Endzeit werden nur einmal in „Unsere Zeit“ angezeigt. Der iPhone-/iCloud-Kalender wird dadurch **nicht verändert**. Der IU-Export ist eine **Momentaufnahme**; spätere Änderungen am IU-Stundenplan erfordern eine neue verschlüsselte Importdatei.

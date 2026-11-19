@@ -79,13 +79,13 @@ function updateStatus(){
  if(demoMode){$('#meStatus').textContent='Beispieldaten';$('#herStatus').textContent='Beispieldaten';$('#syncAge').textContent='Demo';const banner=$('#connectionNotice');banner.textContent='DEMO: Alle angezeigten Termine sind erfunden. Es sind keine Kalenderquellen verbunden.';banner.classList.remove('hidden');return}
  const age=dataAge();
  const sourceCount=owner=>Number.isInteger(state.sources[owner]?.eventCount)?state.sources[owner].eventCount:state.events.filter(e=>e.owner===owner).length;
- $('#meStatus').textContent=state.sources.me?.configured?'iCloud · '+sourceCount('me')+' Termine':'Noch nicht verbunden';
+ $('#meStatus').textContent=state.sources.me?.configured?(state.sources.me.name||'iCloud')+' · '+sourceCount('me')+' Termine':'Noch nicht verbunden';
  $('#herStatus').textContent=state.sources.her?.configured?'MYDUTY · '+sourceCount('her')+' Schichten':'Noch nicht verbunden';
  $('#syncAge').textContent=Number.isFinite(age)?'vor '+(age<1?Math.max(1,Math.round(age*60))+' Min.':Math.round(age)+' Std.'):'Nicht synchronisiert';
  const note=$('#connectionNotice');
  const problems=[];
  if(!fullCoverage())problems.push('Nicht beide Kalenderquellen sind eingerichtet. Freie Zeitfenster sind unverbindlich.');
- if(state.sources.me?.configured && state.events.every(e=>e.owner!=='me'))problems.push('Marcel: iCloud wurde erfolgreich abgefragt, hat aber im synchronisierten Zeitraum keine Termine geliefert. Die Kalender Arbeit, Studium und Privat können leer sein.');
+ if(state.sources.me?.configured && state.events.every(e=>e.owner!=='me'))problems.push('Marcel: Die synchronisierten Quellen haben im angezeigten Zeitraum keine Termine geliefert.');
  if(age>=4)problems.push('Die letzte erfolgreiche Aktualisierung ist älter als vier Stunden. Eventuell ist ein MYDUTY-Link abgelaufen.');
  if(age<-.2)problems.push('Das Datum der Synchronisierung liegt in der Zukunft; die Systemzeit prüfen.');
  note.textContent=problems.join(' '); note.classList.toggle('hidden',problems.length===0);
@@ -138,7 +138,7 @@ function renderSources(){
   const list=$(target);
   if(!state.sources[owner]?.configured && !demoMode){list.innerHTML='<p class="empty">'+sourceName+' ist noch nicht verbunden.</p>';continue}
   const events=state.events.filter(e=>e.owner===owner&&!e.isOff&&Number.isFinite(Date.parse(e.end))&&Date.parse(e.end)>=today).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
-  if(events.length===0){list.innerHTML='<p class="empty">Keine kommenden '+(owner==='me'?'iCloud-Termine für Marcel':'MYDUTY-Dienste für Visto')+' in den synchronisierten Kalenderdaten.</p>';continue}
+  if(events.length===0){list.innerHTML='<p class="empty">Keine kommenden '+(owner==='me'?'Termine für Marcel':'MYDUTY-Dienste für Visto')+' in den synchronisierten Kalenderdaten.</p>';continue}
   list.innerHTML=events.slice(0,5).map(e=>`<div class="source-event"><span class="source-event-date">${esc(dfDate.format(new Date(e.start)))}</span><strong>${esc(e.title)}</strong><span class="source-event-time">${esc(formattedEvent(e))}</span></div>`).join('')+(events.length>5?`<p class="small muted">+ ${events.length-5} weitere Termine im synchronisierten Zeitraum</p>`:'');
  }
 }
