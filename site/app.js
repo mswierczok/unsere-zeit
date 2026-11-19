@@ -92,7 +92,7 @@ function updateStatus(){
 }
 function dayEvents(day){const start=local(day,'00:00').getTime(),after=local(keyOf(plusDays(fromKey(day),1)),'00:00').getTime();return state.events.filter(e=>new Date(e.start).getTime()<after&&new Date(e.end).getTime()>start)}
 function slots(day){
- let start=local(day,'09:00').getTime(), end=local(day,'21:00').getTime(),busy=[];
+ let start=local(day,'09:00').getTime(), end=local(day,'23:00').getTime(),busy=[];
  for(let e of state.events){if(e.isOff)continue;let a=Date.parse(e.start),b=Date.parse(e.end);if(!Number.isFinite(a)||!Number.isFinite(b))continue;
    if(e.owner==='her'&&(e.isNight||/\b(nacht\w*|night\w*|n|nd)\b/i.test(e.title)))b+=state.recovery*3600000;
    if(a>=end||b<=start)continue;busy.push([Math.max(a,start),Math.min(b,end)]);
@@ -126,7 +126,7 @@ function renderDay(){
  const e=dayEvents(state.selected).filter(x=>state.filter==='all'||x.owner===state.filter);
  $('#dayEvents').innerHTML=e.length?e.map(x=>`<div class="event-line"><span class="event-track ${x.owner}"></span><div class="event-content"><strong>${esc(x.title)}</strong><div class="meta">${x.owner==='me'?'Marcel':'Visto'} · ${formattedEvent(x)} · ${esc(x.source||'Kalender')}${x.isOff?' · Frei':''}</div></div></div>`).join(''):'<p class="empty">Hier sind keine Termine erfasst.</p>';
  const available=slots(state.selected).filter(x=>x.minutes>=60);
- $('#freeToday').innerHTML=`<strong>♥ ${trustworthy()?'Gemeinsame Zeitfenster':'Mögliche Zeitfenster'}</strong>${available.length?available.map(x=>dfTime.format(x.start)+'–'+dfTime.format(x.end)).join(' · '):'Keine mindestens einstündige freie Zeit zwischen 9 und 21 Uhr.'}${trustworthy()?'':'<div class="small">Noch nicht vollständig bestätigt.</div>'}`;
+ $('#freeToday').innerHTML=`<strong>♥ ${trustworthy()?'Gemeinsame Zeitfenster':'Mögliche Zeitfenster'}</strong>${available.length?available.map(x=>dfTime.format(x.start)+'–'+dfTime.format(x.end)).join(' · '):'Keine mindestens einstündige freie Zeit zwischen 9 und 23 Uhr.'}${trustworthy()?'':'<div class="small">Noch nicht vollständig bestätigt.</div>'}`;
 }
 function renderFreeList(){
  let data=[];for(let i=0;i<14;i++){let day=plusDays(fromKey(todayKey()),i),s=slots(keyOf(day)).filter(x=>x.minutes>=120);if(s.length)data.push({date:day,slot:s.sort((a,b)=>b.minutes-a.minutes)[0]})}
