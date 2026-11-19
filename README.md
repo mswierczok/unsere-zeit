@@ -56,7 +56,7 @@ Die GitHub-Pages-Adresse mit **Safari** öffnen → **Teilen** → **Zum Home-Bi
 
 - **iCloud:** Solange das Apple-App-Passwort gültig ist und die Kalender lesbar sind, wird ungefähr stündlich abgerufen. Das ChatGPT-iCloud-Plugin ist dabei **nicht** der dauerhafte Sync-Zugang; hierfür dient CalDAV.
 - **MYDUTY:** Der Freigabelink wird innerhalb seiner Gültigkeit neu abgerufen. Danach einen neuen Link erstellen und nur das Secret `MYDUTY_SHARE_URL` ersetzen. Der Adapter ist inoffiziell und kann bei Änderungen der MYDUTY-Webseite ausfallen.
-- **Gemeinsam frei:** Die App errechnet *mögliche* Zeitfenster von 09:00–21:00 und kann keine ungeteilten Verpflichtungen, Wegezeiten oder unerfasste Termine berücksichtigen. Bei unvollständiger oder alter Synchronisierung erscheint eine deutliche Warnung.
+- **Gemeinsam frei:** Die App errechnet *mögliche* Zeitfenster von 09:00–23:00 und kann keine ungeteilten Verpflichtungen, Wegezeiten oder unerfasste Termine berücksichtigen. Bei unvollständiger oder alter Synchronisierung erscheint eine deutliche Warnung.
 - **GitHub Actions:** Zeitpläne laufen nur nach bestem Bemühen. In einem öffentlichen Repo werden geplante Workflows nach 60 Tagen ohne Repository-Aktivität deaktiviert. Dann müssen sie in Actions wieder aktiviert werden. Prüft regelmäßig den `Zuletzt synchronisiert`-Status.
 - **Datenschutz:** Die URL ist öffentlich, die Kalendersnapshot-Datei verschlüsselt. Ihr habt kein individuelles Benutzerkonto; ein gemeinsamer Schlüssel steuert den Zugang. Für besonders sensible Details ist ein privater Server besser.
 - **Kosten:** GitHub Pages und die regulären GitHub-hosted-Action-Läufe auf einem öffentlichen Repository sind nach den derzeitigen Bedingungen kostenlos. Plattformbedingungen können sich ändern.
